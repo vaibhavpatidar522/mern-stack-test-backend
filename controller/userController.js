@@ -16,7 +16,6 @@ const getUsers = asyncHandler(async (req, res) => {
     search = req.query.search;
   }
 
-  try {
     const users = await Users.find({
       $or: [
         { firstName: { $regex: ".*" + search + ".*" } },
@@ -27,26 +26,31 @@ const getUsers = asyncHandler(async (req, res) => {
     })
       .skip(skip)
       .limit(size);
-    const usersWithImageURLs = users.map((user) => {
-      return {
-        _id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        mobile: user.mobile,
-        gender: user.gender,
-        status: user.status,
-        selectedFile: `${req.protocol}://${req.get("host")}/images/${
-          user.selectedFile
-        }`,
-        location: user.location,
-      };
-    });
+      if(users){
 
-    res.status(200).json(usersWithImageURLs);
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching users" });
-  }
+        const usersWithImageURLs = users.map((user) => {
+          return {
+            _id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            mobile: user.mobile,
+            gender: user.gender,
+            status: user.status,
+            selectedFile: `${req.protocol}://${req.get("host")}/images/${
+              user.selectedFile
+            }`,
+            location: user.location,
+          };
+        });
+        
+        res.status(200).json(usersWithImageURLs);
+      }else{
+        res.status(500);
+        throw new Error("Error fetching users");
+      }
+        
+  
 });
 
 // @desc Set users
@@ -163,10 +167,11 @@ const exportUsersCsv = asyncHandler(async (req, res) => {
 // @route GET /api/users/:id'
 //@access Public
 const getUser = asyncHandler(async (req, res) => {
-  try {
+  
     const user = await Users.findById(req.params.id);
+    if (user){
 
-    res
+      res
       .status(200)
       .json({
         ...user._doc,
@@ -174,8 +179,9 @@ const getUser = asyncHandler(async (req, res) => {
           user.selectedFile
         }`,
       });
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching users" });
+    }  else {
+    res.status(500)
+    throw new Error("Error fetching users" );
   }
 });
 
